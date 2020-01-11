@@ -79,6 +79,21 @@ double GetNetworkDifficulty(const CBlockIndex* blockindex)
     return GetDifficultyINTERNAL(blockindex, true);
 }
 
+UniValue GetExperimentalFeatures()
+{
+    UniValue experimentalfeatures(UniValue::VARR);
+    if (mapArgs.count("-developerencryptwallet"))
+        experimentalfeatures.push_back("developerencryptwallet");
+    if (mapArgs.count("-developersetpoolsizezero"))
+        experimentalfeatures.push_back("developersetpoolsizezero");
+    if (mapArgs.count("-paymentdisclosure"))
+        experimentalfeatures.push_back("paymentdisclosure");
+    if (mapArgs.count("-insightexplorer"))
+        experimentalfeatures.push_back("insightexplorer");
+
+    return experimentalfeatures;
+}
+
 static UniValue ValuePoolDesc(
     const std::string &name,
     const boost::optional<CAmount> chainValue,
@@ -909,6 +924,24 @@ UniValue verifychain(const UniValue& params, bool fHelp)
     return CVerifyDB().VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
 }
 
+UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getexperimentalfeatures\n"
+            "\nReturns enabled experimental features.\n"
+            "\nResult:\n"
+            "  [\n"
+            "     \"experimentalfeature\"     (string) The enabled experimental feature\n"
+            "     ,...\n"
+            "  ],\n"            "\nExamples:\n"
+            + HelpExampleCli("getexperimentalfeatures", "")
+            + HelpExampleRpc("getexperimentalfeatures", "")
+        );
+
+    LOCK(cs_main);
+    return GetExperimentalFeatures();
+}
 /** Implementation of IsSuperMajority with better feedback */
 static UniValue SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nRequired, const Consensus::Params& consensusParams)
 {
@@ -1074,7 +1107,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     if (Params().NetworkIDString() == "regtest") {
         obj.push_back(Pair("fullyNotified", ChainIsFullyNotified()));
     }
-
+    
     return obj;
 }
 
@@ -1310,6 +1343,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "gettxout",               &gettxout,               true  },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
+    { "blockchain",         "getexperimentalfeatures",&getexperimentalfeatures,true  },
 
     // insightexplorer
     { "blockchain",         "getblockdeltas",         &getblockdeltas,         false },    
